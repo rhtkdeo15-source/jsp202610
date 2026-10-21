@@ -46,6 +46,9 @@
 		}
 	%>
 	</table>
+	<div>
+		<button>글쓰기</button>
+	</div>
 </body>
 </html>
 <script>

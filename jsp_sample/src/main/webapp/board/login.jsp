@@ -7,7 +7,7 @@
 <title>Insert title here</title>
 </head>
 <body>
-	<form action="login-result.jsp">
+	<form name="form" action="login-result.jsp">
 		<div>
 			<label>아이디 : <input name="userId"></label>
 		</div>
@@ -24,5 +24,11 @@
 <script>
 	function fnLogin() {
 		let form = document.form;
+		console.log(form.userId.value);
+		if(form.userId.value.length < 1 || form.pwd.value.length < 1){
+			alert("아이디 비밀번호를 입력해주세요.");
+			return;
+		}
+		form.submit();
 	}
 </script>
