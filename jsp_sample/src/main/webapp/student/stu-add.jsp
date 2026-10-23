@@ -44,7 +44,10 @@
 		<table>
 			<tr>
 				<th>학번</th>
-				<td><input name="stuNo"></td>
+				<td>
+					<input name="stuNo">
+					<input type="button" value="중복체크" onclick="fnCheck()">
+				</td>
 				<th>이름</th>
 				<td><input name="stuName"></td>
 			</tr>
@@ -85,8 +88,13 @@
 </body>
 </html>
 <script>
+	let addFlg = false;
 	function fnAdd(){
 		let form = document.form;
+		if(!addFlg){
+			alert("중복체크 후 추가 해주세요");
+			return;
+		}
 		if(form.stuNo.value.length != 4){
 			alert("학번은 4글자 입니다.");
 			return;
@@ -94,4 +102,29 @@
 		
 		form.submit();
 	}
+	function fnCheck() {
+		let form = document.form;
+		let stuNo = form.stuNo.value;
+		if(stuNo.length != 4){
+			alert("학번은 4글자입니다");
+			return;
+		}
+		window.open(`stu-check.jsp?stuNo=\${stuNo}`, "check", "width=500, height=500");
+	}
+	function fnReturn(flg) {
+		//console.log(flg);
+		let form = document.form;
+		if(flg == "N"){
+			form.stuNo.readOnly = true;
+			addFlg = true;
+		}
+		
+	}
 </script>
+
+
+
+
+
+
+

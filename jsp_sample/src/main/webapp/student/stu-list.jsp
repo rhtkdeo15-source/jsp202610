@@ -12,41 +12,111 @@
 		padding : 5px 10px;
 		text-align: center;
 	}
+	.page a {
+		text-decoration: none;
+		color : black;
+		margin-right : 3px;
+	}
+	.active {
+		font-weight: bold;
+	}
 </style>
 </head>
 <body>
 	<%@ include file="../db.jsp" %>
 	<%
 	String keyword = request.getParameter("keyword");
+	String grade = request.getParameter("grade");
+	String selectGrade = grade != null ? grade : "";
+	
+	String size = request.getParameter("size");
+	String selectSize = size != null ? size : "";
+	
+	String order = request.getParameter("order") != null ? request.getParameter("order") : "dname";
+	
+	/* 페이징에 사용할 변수 */
+	int pageSize = 5; // 한 페이지에 보여줄 개수
+	int currentPage = 1; // 현재 위치한 페이지
+	
+	if(request.getParameter("page") != null){
+		currentPage = Integer.parseInt(request.getParameter("page"));
+	}
+	
+	if(request.getParameter("size") != null && request.getParameter("size") != ""){
+		pageSize = Integer.parseInt(request.getParameter("size"));
+	}
+	int offset = (currentPage - 1) * pageSize;
+	
+	String cntQuery = "SELECT COUNT(*) AS TOTAL FROM STU WHERE 1=1 ";
+	
+	/* --------------- */
+	
 	/* System.out.println(keyword); */
 	String query =  "SELECT * " +
             		"FROM STU S " +
           			"INNER JOIN DEPARTMENT D ON S.DEPTNO1 = D.DEPTNO " +
           			"WHERE 1=1 ";
+	
 	if(keyword != null){
-		query += "AND NAME LIKE '%" + keyword + "%'";
-		System.out.println(query);
+		query += "AND NAME LIKE '%" + keyword + "%' ";
+		cntQuery += "AND NAME LIKE '%" + keyword + "%' ";
 	}
+	if(grade != null && !grade.equals("")){
+		query += "AND GRADE = " + grade + " ";
+		cntQuery += "AND GRADE = " + grade + " ";
+		// System.out.println(query);
+	}
+	String orderQuery = 
+			order.equals("dname") || order == null ?
+					"ORDER BY DNAME ASC" : order.equals("stuNo") ?
+					"ORDER BY STUNO ASC" : "ORDER BY NAME ASC";
+	query += orderQuery;
+	query += " OFFSET " + offset + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+			
+	
+	// 페이징 쿼리
+	ResultSet cntRS = stmt.executeQuery(cntQuery);
+	cntRS.next();
+	int total = cntRS.getInt("TOTAL");
+	int pageList = (int) Math.ceil((double) total / pageSize);
+	
 	ResultSet rs = stmt.executeQuery(query);
 	
 	int gradeList[] = {1,2,3,4};
 	%>
-	<form name="form">
+	<form name="form" action="stu-list.jsp">
 		<div>
-			검색어 : <input name="keyword">
-				   <button onclick="fnSearch()">검색</button>
-		   <select name="grade">
-		  	 <option> :: 전체 :: </option>
+			검색어 : <input name="keyword" value="<%= keyword != null ? keyword : "" %>">
+				   <input type="button" value="검색" onclick="fnSearch()">
+		   <select name="grade" onchange="fnGrade()">
+		  	 <option value=""> :: 전체 :: </option>
 		   <%
 		   		for(int i=0; i<gradeList.length; i++){
 		   %>
-		   			<option value="<%= gradeList[i] %>"><%= gradeList[i] %>학년</option>
+		   			<option value="<%= gradeList[i] %>" <%= selectGrade.equals(Integer.toString(gradeList[i])) ? "selected" : "" %>><%= gradeList[i] %>학년</option>
 		   <%			
 		   		}
 		   %>
 		   </select>
 		</div>
 		<hr> 
+		<div>
+			<select name="size" onchange="fnSize()">
+				<%
+					int pageArr[] = {5, 10, 20, 50};
+					for(int i=0; i<pageArr.length; i++){
+				%>
+						<option value="<%= pageArr[i] %>" <%= selectSize.equals(Integer.toString(pageArr[i])) ? "selected" : "" %>><%= pageArr[i] %>개씩</option>
+				<%		
+					}
+				%>
+			</select>
+			|
+			<label><input name="order" type="radio" value="stuName" <%= order.equals("stuName") ? "checked" : "" %> onclick="fnSearch()"> 이름순</label>
+			<label><input name="order" type="radio" value="stuNo" <%= order.equals("stuNo") ? "checked" : "" %> onclick="fnSearch()"> 학번순</label>
+			<label><input name="order" type="radio" value="dname" <%= order.equals("dname") ? "checked" : "" %> onclick="fnSearch()"> 학과순</label>
+		</div>
+		<hr>
 		<table>
 			<tr>
 				<th>학번</th>
@@ -72,15 +142,63 @@
 		%>
 		
 		</table>
+		<div class="page">
+			
+			<a href="javascript:;" onclick="fnMove('prev')" <%= currentPage == 1 ? "hidden" : "" %>>◀</a>
+			<%
+				for(int i=1; i<=pageList; i++){
+					if(currentPage == i){
+			%>
+						<%-- <a href="?page=<%= i %>&size=<%= selectSize %>" class="active"><%= i %></a> --%>
+						<a href="javascript:;" onclick="fnPage(<%= i %>)" class="active"><%= i %></a>
+			<%			
+					} else {
+			%>
+						<%-- <a href="?page=<%= i %>&size=<%= selectSize %>"><%= i %></a> --%>
+						<a href="javascript:;" onclick="fnPage(<%= i %>)" class="active"><%= i %></a>
+						
+			<%			
+					}	
+				}
+			%>
+			<a href="javascript:;" onclick="fnMove('next')" <%=currentPage == pageList ? "hidden" : "" %>>▶</a>
+		</div>
 		<div>
 			<a href="stu-add.jsp"><button>학생추가</button></a>
 		</div>
+		<input name="page" value="<%= currentPage %>" hidden>
 	</form>
 </body>
 </html>
 <script>
+	// fnSearch, fnGrade, fnSize, fnPage 는 결국 같은 내용이므로 한꺼번에 처리해도 된다
 	function fnSearch(){
 		let form = document.form;
-		location.href = "stu-list.jsp?keyword="+form.keyword.value;
+		form.page.value = 1;
+		form.submit();
+		//location.href = "?keyword="+form.keyword.value;
+		// location.href = "stu-list.jsp?keyword="+form.keyword.value;
+	}
+	
+	function fnGrade(){
+		let form = document.form;
+		form.page.value = 1;
+		form.submit();
+	}
+	function fnSize() {
+		let form = document.form;
+		form.page.value = 1;
+		form.submit();
+	}
+	function fnPage(page) {
+		let form = document.form;
+		form.page.value = page;
+		form.submit();
+	}
+	function fnMove(v) {
+		let form = document.form;
+		form.page.value = v == "prev" ? <%= currentPage - 1 %> : <%= currentPage + 1 %>;
+		form.submit();
 	}
 </script>
+

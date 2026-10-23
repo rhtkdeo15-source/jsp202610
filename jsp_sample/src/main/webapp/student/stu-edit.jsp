@@ -41,7 +41,7 @@
 	    		"FROM STU S " +
 	  			"INNER JOIN DEPARTMENT D ON S.DEPTNO1 = D.DEPTNO " +
 	  			"WHERE STUNO = " + stuNo;
-		System.out.println(query);
+		//System.out.println(query);
 		ResultSet rs = stmt.executeQuery(query);
 		rs.next();
 		
