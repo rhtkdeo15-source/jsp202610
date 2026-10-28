@@ -19,6 +19,14 @@
 			<label>이름 : <input name="name"></label>
 		</div>
 		<div>
+			취미 :
+			<label><input type="checkbox" name="hobby" value="1">코딩</label>
+			<label><input type="checkbox" name="hobby" value="2">영화</label>
+			<label><input type="checkbox" name="hobby" value="3">운동</label>
+			<label><input type="checkbox" name="hobby" value="4">게임</label>
+			<label><input type="checkbox" name="hobby" value="5">유튭</label>
+		</div>
+		<div>
 			<input type="submit" value="회원가입" onclick="fnJoin()">
 		</div>
 	</form>

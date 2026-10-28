@@ -12,16 +12,18 @@
         padding: 10px;
         text-align: center;
     }
-
     .page a {
         text-decoration: none;
         color: black;
         margin-right: 3px;
     }
-
     .active {
         font-weight: bold;
     }
+   td a {
+		text-decoration: none;
+		color : black;
+	}
 </style>
 </head>
 <body>
@@ -82,10 +84,7 @@
 
                 for (int i = 0; i < pageArr.length; i++) {
             %>
-                <option value="<%= pageArr[i] %>"
-                    <%= (size == null && pageArr[i] == 5)
-                        || selectSize.equals(Integer.toString(pageArr[i]))
-                        ? "selected" : "" %>>
+                <option value="<%= pageArr[i] %>" <%= (size == null && pageArr[i] == 5) || selectSize.equals(Integer.toString(pageArr[i])) ? "selected" : "" %>>
                     <%= pageArr[i] %>개씩
                 </option>
             <%
@@ -98,8 +97,13 @@
         <%
             ResultSet rs = null;
 
-            // ★ 수정: ORDER BY를 추가한 페이징 쿼리
-            String query = "SELECT * FROM TBL_BOARD ORDER BY BOARDNO DESC";
+            String query = "SELECT B.*, NVL(COMMENT_CNT, 0) AS COMMENT_CNT "
+                    + "FROM TBL_BOARD B "
+                    + "LEFT JOIN ( "
+                    + "    SELECT BOARDNO, COUNT(BOARDNO) AS COMMENT_CNT "
+                    + "    FROM TBL_COMMENT "
+                    + "    GROUP BY BOARDNO "
+                    + ") T ON B.BOARDNO = T.BOARDNO";
             query += " OFFSET " + offset + " ROWS";
             query += " FETCH NEXT " + pageSize + " ROWS ONLY";
 
@@ -126,22 +130,20 @@
                 <tr>
                     <td><%= rs.getString("BOARDNO") %></td>
                     <td>
-                        <a href="javascript:;"
-                           onclick="fnView(<%= rs.getString("BOARDNO") %>)">
-                            <%= rs.getString("TITLE") %>
+                        <a href="javascript:;" onclick="fnView(<%= rs.getString("BOARDNO") %>)"> 
+                        	<%= rs.getString("TITLE") %>
+                        	<%if(rs.getInt("COMMENT_CNT") != 0){
+                        		out.println("<span style='color:orange;'>[" + rs.getInt("COMMENT_CNT") + "]</span>");
+                        	} %>
                         </a>
                     </td>
                     <td><%= rs.getString("USERID") %></td>
                     <td><%= rs.getString("CNT") %></td>
                     <td>
                         <%
-                            if (sessionId != null
-                                && (sessionId.equals(rs.getString("USERID"))
-                                || "A".equals(sessionRole))) {
+                            if (sessionId != null && (sessionId.equals(rs.getString("USERID")) || "A".equals(sessionRole))) {
                         %>
-                            <button type="button"
-                                onclick="fnRemove(<%= rs.getString("BOARDNO") %>)">
-                                삭제
+                            <button type="button" onclick="fnRemove(<%= rs.getString("BOARDNO") %>)">삭제
                             </button>
                         <%
                             }
@@ -154,12 +156,13 @@
         </table>
 
         <div class="page">
-            <%-- 이전 페이지 버튼 --%>
+           
             <% if (currentPage > 1) { %>
                 <a href="javascript:;" onclick="fnMove('prev')">◀</a>
-            <% } %>
-
-            <%-- ★ 수정: 현재 페이지에만 active 적용 --%>
+            <% 
+            	} 
+            %>
+            
             <%
                 for (int i = 1; i <= pageList; i++) {
             %>
@@ -172,10 +175,11 @@
                 }
             %>
 
-            <%-- 다음 페이지 버튼 --%>
             <% if (currentPage < pageList) { %>
                 <a href="javascript:;" onclick="fnMove('next')">▶</a>
-            <% } %>
+            <% 
+            	} 
+            %>
         </div>
 
         <div>
@@ -218,10 +222,7 @@
         let form = document.form;
 
         form.page.value =
-            v == "prev"
-                ? <%= currentPage - 1 %>
-                : <%= currentPage + 1 %>;
-
+            v == "prev" ? <%= currentPage - 1 %> : <%= currentPage + 1 %>;
         form.submit();
     }
 </script>
